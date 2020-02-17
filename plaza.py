@@ -83,6 +83,9 @@ ran = Rancho([vladi,chino,enzo,mart])
 p = Plaza("Las casas y Congreso", ran)
 
 
+juan    = Persona("Juan",['malabarear','huerta'],25)
+lorenzo = Persona("Lorenzo", ['go','ajedrez'],30)
+dami    = Persona("Damian", ['acrobacia','fichines'],32)
 
 chaboncito_bien = Persona("Marcos",['fotografia','cubo'],16)
 chaboncito_cualca = Persona("Andrea", ['danza','folklore'],37)
