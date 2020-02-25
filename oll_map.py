@@ -8,7 +8,144 @@ from matplotlib.patches import Rectangle
 faces_fig = plt.figure(figsize=[6,6])
 face_size=0.05
 
+caras = ['U','D','R','L','F','B']
 cubo = pc.Cube()
+
+def invertir_movimiento(m):
+    if len(m) == 1:
+        return m + "'"
+    if len(m) == 2:
+        return m[0]
+
+def espejar_movimiento(m):
+    if m == "R":
+        return "L'"
+    if m == "R'":
+        return "L"
+    if m == "L'":
+        return "R"
+    if m == "L":
+        return "R'"
+
+def reflejar(algo):
+    seq = algo.split()
+    nueva = []
+    for m in seq:
+        if m[0] == 'R' or m[0] == 'L':
+            nuevo_m = espejar_movimiento(m)
+        else:
+            nuevo_m = invertir_movimiento(m)
+        nueva.append(nuevo_m)
+    return " ".join(nueva)
+
+def invertir(algo):
+    seq = algo.split()
+    seq.reverse()
+    nueva = []
+    for m in seq:
+        m_invertido = invertir_movimiento(m)
+        nueva.append(m_invertido)
+    return " ".join(nueva)
+
+
+
+def crawl(lugar, algo, visitadas):  # Acá hay que retomar
+    lugar = hash_cubo(cubo)
+    
+    if lugar in visitadas:
+        return {}
+    
+    vecis = vecindad(algo)
+
+
+def vecindad(algo):
+    a_inv = invertir(algo)
+    a_ref = reflejar(algo)
+    a_inv_ref = invertir(a_ref)
+    
+    veci = {}
+    veci['algo'] = check_destino(algo)
+    veci['algo_inv'] = check_destino(a_inv)
+    veci['algo_ref'] = check_destino(a_ref)
+    veci['algo_inv_ref'] = check_destino(a_inv_ref)
+    
+    return veci
+
+def check_destino(algo):
+    cubo.perform_algo(algo)
+    dest = hash_cubo(cubo)
+    algo_invertido = invertir(algo)
+    cubo.perform_algo(algo_invertido)
+    return dest
+
+#dest[c] = h_cara
+def hash_cubo():
+    cs = []
+    for c in caras:
+        st_cara = cubo.get_face(c)
+        h_cara = hash_cara(st_cara)
+        cs.append(h_cara)
+    h_cubo = "".join(cs)
+    return h_cubo
+
+def hash_cara(f):
+    cs = ''
+    for r in f:
+        for s in r:
+            cs += s.colour[0]
+    return cs
+
+def hash_up(c):
+    uf = c.get_face('U')
+    return hash_face(uf)
+
+
+
+
+
+def loop_cube(c, visited):
+    
+    st = hash_up(c)
+    
+    if st in visited:
+        print('!'+st)
+        return {}
+    
+    print('+'+st)
+    
+    fsd(c)
+    to_der = hash_up(c)
+    asd(c)
+
+    fsi(c)
+    to_izq = hash_up(c)
+    asi(c)
+
+    asd(c)
+    fr_der = hash_up(c)
+    fsd(c)
+
+    asi(c)
+    fr_izq = hash_up(c)
+    fsi(c)
+
+    visited[st] = {'to_der' : to_der,
+                   'from_der' : to_izq,
+                   'to_izq' : fr_der,
+                   'from_izq' : fr_izq}
+
+    fsd(c)
+    visited.update(loop_cube(c, visited))
+    asd(c)
+
+    fsi(c)
+    visited.update(loop_cube(c, visited))
+    asi(c)
+
+    return visited
+
+
+
 
 fsd = lambda c: c.perform_algo("F R U R' U' F'")
 fsi = lambda c: c.perform_algo("F' L' U' L U F")
@@ -24,13 +161,13 @@ colors = {'o' : 'orange',
 
 
 
-#def draw_face(f):
-#    for row in range(3):
-#            for col in range(3):
-#                print(uface[row][col],end='')
-#            print()
+def draw_face_console(f):
+    for row in range(3):
+            for col in range(3):
+                print(uface[row][col],end='')
+            print()
 
-def draw_face(f, xy=[0,0]):
+def draw_face_mpl(f, xy=[0,0]):
     
     line_size = 1
     cubie_size = 9
@@ -50,8 +187,7 @@ def draw_face(f, xy=[0,0]):
         l = line_size   # left
         
         for j in range(3):
-            print("Placing cubie {} in ({},{})".format(f[i],l,b))
-        
+            #print("Placing cubie {} in ({},{})".format(f[i],l,b))
             r = Rectangle((l,b), cubie_size, cubie_size,
                           linewidth=0,edgecolor='black',facecolor=colors[f[i*3+j]])
             ax.add_patch(r)
@@ -60,84 +196,34 @@ def draw_face(f, xy=[0,0]):
 
     return ax
 
-def hash_face(f):
-    cs = ''
-    for r in f:
-        for s in r:
-            cs += s.colour[0]
-    return cs
-
-def hash_upface(c):
-    uf = c.get_face('U')
-    return hash_face(uf)
 
 
 
-def loop_cube(c, visited):
-
-    st = hash_upface(c)
-
-    if st in visited:
-        print('!'+st)
-        return {}
-
-    print('+'+st)
-    
-    fsd(c)
-    to_der = hash_upface(c)
-    asd(c)
-
-    fsi(c)
-    to_izq = hash_upface(c)
-    asi(c)
-
-    asd(c)
-    fr_der = hash_upface(c)
-    fsd(c)
-
-    asi(c)
-    fr_izq = hash_upface(c)
-    fsi(c)
-
-    visited[st] = {'to_der' : to_der,
-                   'from_der' : to_izq,
-                   'to_izq' : fr_der,
-                   'from_izq' : fr_izq}
-
-    fsd(c)
-    visited.update(loop_cube(c, visited))
-    asd(c)
-
-    fsi(c)
-    visited.update(loop_cube(c, visited))
-    asi(c)
-
-    return visited
 
 
 def map_as_dict(g):
 
-    nodes = [{'id' : k, 'label' : k, 'img' : draw_face(k)} for k in g]
+    nodes = [{'id' : k, 'label' : k, 'img' : draw_face_mpl(k)} for k in g]
 
     edgs = []
     for k in g:
-        edgs.append( (k,g[k]['to_der']) )
-        edgs.append( (k,g[k]['to_izq']) )
-        edgs.append( (k,g[k]['from_der']) )
-        edgs.append( (k,g[k]['from_izq']) )
+        edgs.append( (k,g[k]['to_der'],'smd') )
+        edgs.append( (k,g[k]['to_izq'],'smi') )
+        edgs.append( (k,g[k]['from_der'],'imd') )
+        edgs.append( (k,g[k]['from_izq'],'imi') )
 
-    edges = [{'id' : s+'-'+t, 'source' : s, 'target' : t} for (s,t) in edgs]
+    edges = [{'id' : s+'-'+t, 'source' : s, 'target' : t, 'alg' : a} for (s,t,a) in edgs]
 
-    return {'nodes' : nodes,'edges' : edges}
+    return {'nodes' : nodes, 'edges' : edges}
 
 def graphiphy(g):
 
-    G = nx.Graph()
+    G = nx.DiGraph()
     for n in g['nodes']:
         G.add_node(n['id'], img=n['img'])
 
     for e in g['edges']:
-        G.add_edge(e['source'], e['target'])
+        G.add_edge(e['source'], e['target'], alg=e['alg'])
     
     return G
 
@@ -156,10 +242,35 @@ def draw_graph(g):
     ax.zorder = 0.01
 
     # Layout
-    pos=nx.spring_layout(g)     #, pos = {'yyyyyyyyy' : (0,0)}) #, fixed=['yyyyyyyyy'])
+    
+    pos={"yyyyyyyyy" : (0.0,    0.0),
+         "yyryygybr" : (0.2,    0.2),
+         "rgbyyyrog" : (0.4,    0.2),
+         "bybyyygyg" : (0.6,    0.0),
+         "byoyyggbo" : (-0.4,  -0.2),
+         "ogyyyyooy" : (-0.2,  -0.2),
+         "byoyyygyo" : (-0.3,   0.4),
+         "oyyyygory" : (0.0,    0.6),
+         "ygyyyyyby" : (0.2,    0.8),
+         "yyryyyyyr" : (0.4,    0.8),
+         "rybyygrrg" : (0.4,   -0.2),
+         "bgbyyygbg" : (0.2,   -0.2),
+         "rybyyyryg" : (-0.9,   0.9),
+         "bybyyggog" : (-0.9,   0.7),
+         "bgoyyygro" : (-0.9,   0.5),
+         "oyyyyyoyy" : (-0.9,   0.3),
+         "yyyyygyoy" : (-0.9,   0.1),
+         "ygryyyyrr" : (-0.9,  -0.1),
+         "byogyygoo" : (-0.7,  -0.8),
+         "oyygyyoby" : (-0.7,  -0.6),
+         "yyygyyyry" : (-0.7,  -0.4),
+         "yyrgyyyor" : (-0.7,  -0.2),
+         "rybgyyrbg" : (-0.7,   0.2),
+         "bybgyygrg" : (-0.7,   0.4)
+        }
     #{k: array([x., y.]), k:...}
-    
-    
+
+    pos=nx.spring_layout(g)     #, pos = {'yyyyyyyyy' : (0,0)}) #, fixed=['yyyyyyyyy'])
     
     nx.draw_networkx_edges(g,pos,ax=ax)
     
